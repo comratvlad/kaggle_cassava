@@ -41,5 +41,5 @@ class FolderDataset(Dataset):
         for feature in self.features:
             sample_dict[feature.name] = feature.read(index)
         if self.transforms is not None:
-            sample_dict = self.transforms(sample_dict)
+            sample_dict = self.transforms(sample_dict)  # self.transforms(**sample_dict) ?
         return sample_dict
