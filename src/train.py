@@ -15,13 +15,15 @@ def main(cfg: DictConfig) -> None:
     model = settings.model
     model.to(settings.device)
     loss = settings.loss
+    optimizer = settings.optimizer
     for batch in train_loader:
         model_input = batch[settings.model_input_feature].type(torch.FloatTensor).to(settings.device)
         model_output = model(model_input)
         weighted_sum, components_eval = loss(batch, model_output)
+        optimizer.zero_grad()
         weighted_sum.backward()
+        optimizer.step()
         print(components_eval)
-        break
 
 
 if __name__ == '__main__':
