@@ -1,0 +1,41 @@
+experiment: default_experiment
+task: task_1
+
+sampled_features:
+  - lib.utils.data.features.RGBFrame
+  - lib.utils.data.features.DiseaseLabel
+
+model:
+  _target_: torchvision.models.resnet18
+  pretrained: False
+  num_classes: 5
+
+model_input_feature: rgb_frame
+
+train_data:
+  cassava_dataset:
+    path: /home/researcher/ssd_data/Cassava/train_images/
+    info_path: /home/researcher/ssd_data/Cassava/train.csv
+    weight: 1.0
+  cassava_dataset_2:
+    path: /home/researcher/ssd_data/Cassava/train_images/
+    info_path: /home/researcher/ssd_data/Cassava/train.csv
+    weight: 1.0
+
+batch_size: 32
+num_workers: 4
+device: ???
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.001
+  amsgrad: False
+
+losses:
+  cross-entropy:
+    callable:
+      _target_: torch.nn.CrossEntropyLoss
+    args:
+      input: model_output
+      target: batch.disease_label
+    weight: 1.0

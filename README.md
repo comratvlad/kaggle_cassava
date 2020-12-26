@@ -1,2 +1,2 @@
-# kaggle_cassava
+# Cassava classification challenge
 Cassava classification challenge solution code
