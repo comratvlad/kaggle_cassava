@@ -5,23 +5,23 @@ sampled_features:
   - lib.utils.data.features.RGBFrame
   - lib.utils.data.features.DiseaseLabel
 
+# Model ========================================================
 model:
-  _target_: torchvision.models.resnet18
-  pretrained: False
+  _target_: lib.models.regnet.regnetx_002
+  pretrained_weights: /home/researcher/cassava/data/RegNetX-200M-5e5535e1.pth
   num_classes: 5
 
 model_input_feature: rgb_frame
+# ==============================================================
 
+# Train ========================================================
 train_data:
   cassava_dataset:
     path: /home/researcher/ssd_data/Cassava/train_images/
     info_path: /home/researcher/ssd_data/Cassava/train.csv
     weight: 1.0
-  cassava_dataset_2:
-    path: /home/researcher/ssd_data/Cassava/train_images/
-    info_path: /home/researcher/ssd_data/Cassava/train.csv
-    weight: 1.0
 
+n_epochs: ???
 batch_size: 32
 num_workers: 4
 device: ???
@@ -39,3 +39,4 @@ losses:
       input: model_output
       target: batch.disease_label
     weight: 1.0
+# ==============================================================

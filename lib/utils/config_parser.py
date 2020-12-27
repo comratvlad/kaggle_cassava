@@ -29,6 +29,7 @@ class ConfigParser:
         self.optimizer = hydra.utils.instantiate(config.optimizer, params=self.model.parameters())
         self.loss = self._get_weighted_sum_loss(config.losses, config.device)
         self.device = config.device
+        self.n_epochs = config.n_epochs
 
     @staticmethod
     def _get_train_loader(train_data, sampled_features, batch_size, num_workers):
@@ -42,6 +43,7 @@ class ConfigParser:
         train_dataset = ConcatDataset(train_datasets)
         train_loader = DataLoader(train_dataset,
                                   batch_size=batch_size,
+                                  shuffle=True,
                                   # sampler=train_sampler,
                                   num_workers=num_workers)
         return train_loader
