@@ -1,17 +1,23 @@
+from typing import List
+
 import pandas as pd
 from torch.utils.data import Dataset
+
+from lib.utils.data.features import DatasetFeature
 
 
 class FolderDataset(Dataset):
     """
     Standard torch.utils.data.Dataset class for frame-based data sets.
     """
-    def __init__(self, folder_path, info_path, features, transforms, filter_by: dict = None):
+
+    def __init__(self, folder_path: str, info_path: str, features: List[DatasetFeature],
+                 transforms=None, filter_by: dict = None):
         """
         :param folder_path: absolute path to data set root
-        :param info_path: pass
-        :param features: List with names of the features that would be sampled. For example: ['rgb', 'optical_flow', 'lbp']
-        :param transforms: Function that takes the dictionary of sampled features and transforms features into a valid
+        :param info_path: absolute path to data set info file
+        :param features: list with features that would be sampled
+        :param transforms: function that takes the dictionary of sampled features and transforms features into a valid
         neural network input
         For example:
         def rgb_lbr_pair_transform(features_dict):

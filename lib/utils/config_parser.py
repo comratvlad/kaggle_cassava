@@ -40,8 +40,7 @@ class ConfigParser:
         train_datasets = []
         for _, train_dataset_setting in train_data.items():
             dataset = FolderDataset(train_dataset_setting.path, train_dataset_setting.info_path,
-                                    features=[pydoc.locate(feature) for feature in sampled_features],
-                                    transforms=None)
+                                    features=[pydoc.locate(feature) for feature in sampled_features])
             train_datasets.append(dataset)
 
         train_dataset = ConcatDataset(train_datasets)
