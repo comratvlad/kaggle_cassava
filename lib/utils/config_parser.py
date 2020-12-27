@@ -1,8 +1,10 @@
 import pydoc
+from typing import Union
 
 import hydra
 from torch.nn import Module
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import DataLoader, ConcatDataset
 
 from lib.losses.weighted_sum_loss import WeightedSumLoss, LossSettings
@@ -15,7 +17,7 @@ class ConfigParser:
     train_loader: DataLoader
 
     optimizer: Optimizer
-    # scheduler: Union[_LRScheduler, None]
+    scheduler: Union[_LRScheduler, None]
     # checkpoints: str
     # tensorboard: TensorboardSettings
     model: Module
@@ -27,6 +29,8 @@ class ConfigParser:
         self.model = hydra.utils.instantiate(config.model)
         self.model_input_feature = config.model_input_feature
         self.optimizer = hydra.utils.instantiate(config.optimizer, params=self.model.parameters())
+        self.scheduler = hydra.utils.instantiate(config.scheduler, optimizer=self.optimizer) if config.scheduler \
+            else None
         self.loss = self._get_weighted_sum_loss(config.losses, config.device)
         self.device = config.device
         self.n_epochs = config.n_epochs

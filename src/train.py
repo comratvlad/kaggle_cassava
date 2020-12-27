@@ -41,8 +41,12 @@ def main(cfg: DictConfig) -> None:
 
         print('Epoch: {}'.format(epoch), end='; ')
         for loss_name in train_losses:
-            print('{}: {:.9f}; '.format(loss_name, train_losses[loss_name]))
+            print('{}: {:.6f}; '.format(loss_name, train_losses[loss_name]))
         # ==============================================================================================================
+
+        if settings.scheduler:
+            print('lr: {:.6f}'.format(optimizer.param_groups[0]['lr']))
+            settings.scheduler.step()
 
 
 if __name__ == '__main__':
