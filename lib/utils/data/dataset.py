@@ -30,6 +30,24 @@ class FolderDataset(Dataset):
         """
         self.folder_path = folder_path
         self.info = pd.read_csv(info_path)
+        if filter_by is not None:
+            _not_filtered_info_len = len(self.info)
+            # Sic! If several columns are mentioned in filter_by, filters will be applied one-by-one.
+            for column_name, value in filter_by.items():
+                if column_name not in self.info.columns:
+                    raise ValueError(f'{info_path}: cannot filter by column {column_name}; column does not exist')
+                if isinstance(value, list):
+                    do_not_exist = [v for v in value if v not in self.info[column_name].values]
+                    if do_not_exist:
+                        raise ValueError(f'{info_path}: values {do_not_exist} mentioned in filter_by '
+                                         f'do not appear in column "{column_name}"')
+                    self.info = self.info[self.info[column_name].isin(value)]
+                else:
+                    if value not in self.info[column_name].values:
+                        raise ValueError(f'{info_path}: value "{value}" mentioned in filter_by '
+                                         f'do not appear in column "{column_name}"')
+                    self.info = self.info[self.info[column_name] == value]
+            assert(len(self.info) < _not_filtered_info_len), 'Info length did not decrease after filtration'
         self.features = [feature(self.folder_path, self.info) for feature in features]
         self.transforms = transforms
 
@@ -41,5 +59,5 @@ class FolderDataset(Dataset):
         for feature in self.features:
             sample_dict[feature.name] = feature.read(index)
         if self.transforms is not None:
-            sample_dict = self.transforms(sample_dict)  # self.transforms(**sample_dict) ?
+            sample_dict = self.transforms(**sample_dict)
         return sample_dict

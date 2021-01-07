@@ -27,7 +27,6 @@ class RGBFrame(DatasetFeature):
         image_path = os.path.join(self.folder_path, self.info.iloc[index]['image_id'])
         image = cv2.imread(image_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = np.moveaxis(image, -1, 0) / 255.
         return image
 
 
