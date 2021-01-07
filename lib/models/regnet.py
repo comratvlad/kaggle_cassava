@@ -140,8 +140,7 @@ class RegNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _forward_impl(self, x):
-        # See note [TorchScript super()]
+    def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -155,10 +154,8 @@ class RegNet(nn.Module):
         x = torch.flatten(x, 1)
         x = self.fc(x)
 
-        return x
-
-    def forward(self, x):
-        return self._forward_impl(x)
+        return {'disease_logits': x, 'disease_scores': nn.Softmax()(x).argmax(1),
+                'disease_prediction': nn.Softmax()(x).argmax(1)}
 
 
 def load_state_dict(model, pretrained_weights):

@@ -25,7 +25,7 @@ train_data:
 
 n_epochs: ???
 batch_size: 48
-num_workers: 4
+num_workers: 8
 device: ???
 
 transforms: lib.utils.data.transforms.rgb_transform
@@ -46,7 +46,7 @@ losses:
     callable:
       _target_: torch.nn.CrossEntropyLoss
     args:
-      input: model_output
+      input: model_output.disease_logits
       target: batch.disease_label
     weight: 1.0
 # ==============================================================
@@ -63,7 +63,5 @@ dev_data:
 dev_transforms: lib.utils.data.transforms.rgb_transform
 
 metrics:
-  FRR: lib.metrics.FRR
-  FAR: lib.metrics.FAR
-  HTER: lib.metrics.HTER
+  ACC: sklearn.metrics.accuracy_score
 # ==============================================================

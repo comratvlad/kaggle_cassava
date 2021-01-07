@@ -21,7 +21,6 @@ class ConfigParser:
     optimizer: Optimizer
     scheduler: Union[_LRScheduler, None]
     # checkpoints: str
-    # tensorboard: TensorboardSettings
     model: Module
     model_input_feature: str
 
@@ -38,6 +37,7 @@ class ConfigParser:
         self.loss = self._get_weighted_sum_loss(config.losses, config.device)
         self.device = config.device
         self.n_epochs = config.n_epochs
+        self.metrics_dict = {name: pydoc.locate(value) for name, value in config.metrics.items()}
 
     @staticmethod
     def get_normalize():

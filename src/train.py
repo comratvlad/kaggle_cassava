@@ -1,7 +1,3 @@
-"""
-sudo PYTHONPATH='/home/researcher/cassava' HYDRA_FULL_ERROR=1 /home/researcher/miniconda3/bin/python3.7 train.py -cp ../data/configs -cn example +device=0
-"""
-
 from collections import defaultdict
 
 import hydra
@@ -28,24 +24,25 @@ def train_one_epoch(model, model_input_feature, loader, loss, optimizer, device)
     return component_values
 
 
-def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, threshold, metrics, torch_device):
+def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, metrics, torch_device):
     """
     :param loss: an instance of WeightedSumLoss for evaluating
     :param model: pyTorch model to evaluate
     :param loaders: a dictionary in format {<dataset name>: <pyTorch DataLoader instance>, ...}
     :param model_input_feature: a string that will be used as a key to get model input from sampled data-batch
-    :param threshold: a value above which scores will be considered class 1
     :param metrics: a dictionary {<metric name>: <metric function import>}. Metric function is a callable that takes
     predictions as the first argument and true labels as the second
     :param torch_device: device to place model input to (must be the same device as the model's)
     :return: a dictionary { <metric name>: { <dataset name>: <metric result>, ...}, ...}
     """
 
-    metrics_result = {}  # {metric_name: {dataset_name: 0 for dataset_name in loaders.keys()} for metric_name in metrics}
+    metrics_result = {metric_name: {dataset_name: 0 for dataset_name in loaders.keys()} for metric_name in metrics}
     loss_dict = {dataset_name: {} for dataset_name in loaders.keys()}
     model.eval()
 
     for dataset_name, loader in loaders.items():
+        pred_proba = []
+        ground_truth = []
         with torch.no_grad():
             for batch in tqdm(loader):
                 model_input = batch[model_input_feature].type(torch.FloatTensor).to(torch_device)
@@ -55,8 +52,11 @@ def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, thresho
                     loss_dict[dataset_name].update(_components)
                 else:
                     loss_dict[dataset_name] = {k: val + _components[k] for k, val in loss_dict[dataset_name].items()}
+                ground_truth.extend(list(batch['disease_label'].detach().cpu()))
+                pred_proba.extend(list(model_output['disease_prediction'].detach().cpu()))
         loss_dict[dataset_name] = {k: i / len(loader) for k, i in loss_dict[dataset_name].items()}
-
+        for metric_name, metric_function in metrics.items():
+            metrics_result[metric_name][dataset_name] = metric_function(ground_truth, pred_proba)
     return metrics_result, loss_dict
 
 
@@ -69,8 +69,7 @@ def main(cfg: DictConfig) -> None:
     model.to(settings.device)
     loss = settings.loss
     optimizer = settings.optimizer
-    metrics_dict = None
-    threshold = None
+    metrics_dict = settings.metrics_dict
 
     # Training loop
     for epoch in range(settings.n_epochs):
@@ -83,12 +82,16 @@ def main(cfg: DictConfig) -> None:
         # ==============================================================================================================
 
         # Dev ==========================================================================================================
-        metrics_result, loss_dict = evaluate(loss, model, dev_loaders, settings.model_input_feature, threshold,
-                                             metrics_dict, settings.device)
+        eval_results, loss_dict = evaluate(loss, model, dev_loaders, settings.model_input_feature,
+                                           metrics_dict, settings.device)
         for dataset_name in loss_dict:
             print(dataset_name+':')
             for loss_name in loss_dict[dataset_name]:
                 print('{}: {:.9f}; '.format(loss_name, loss_dict[dataset_name][loss_name]))
+
+        for metric_name, metrics_result in eval_results.items():
+            print('{}: {}'.format(metric_name, ' '.join(['{} - {:.4f}'.format(dataset_name, value)
+                                                         for dataset_name, value in metrics_result.items()])))
         # ==============================================================================================================
 
         if settings.scheduler:
