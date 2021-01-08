@@ -12,6 +12,8 @@ model:
   num_classes: 5
 
 model_input_feature: rgb_frame
+
+checkpoints: /home/researcher/cassava/data/checkpoints
 # ==============================================================
 
 # Train ========================================================
@@ -20,16 +22,16 @@ train_data:
     path: /home/researcher/ssd_data/Cassava/train_images/
     info_path: /home/researcher/ssd_data/Cassava/train.csv
     filter_by:
-      protocol_1: dev
+      protocol_1: train
     weight: 1.0
 
 n_epochs: ???
-batch_size: 48
-num_workers: 8
+batch_size: 120
+num_workers: 32
 device: ???
 
 transforms: lib.utils.data.transforms.rgb_transform
-augmentations: weak
+augmentations: hard
 
 optimizer:
   _target_: torch.optim.Adam

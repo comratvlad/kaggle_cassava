@@ -1,4 +1,5 @@
 from collections import defaultdict
+from pathlib import Path
 
 import hydra
 import torch
@@ -6,6 +7,7 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 
 from lib.losses.weighted_sum_loss import WeightedSumLoss
+from lib.utils.checkpoint_writer import CheckpointsWriter
 from lib.utils.config_parser import ConfigParser
 
 
@@ -62,7 +64,7 @@ def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, metrics
 
 @hydra.main()
 def main(cfg: DictConfig) -> None:
-    settings = ConfigParser(cfg)
+    settings = ConfigParser(DictConfig(cfg))
     train_loader = settings.train_loader
     dev_loaders = settings.dev_loaders
     model = settings.model
@@ -70,6 +72,13 @@ def main(cfg: DictConfig) -> None:
     loss = settings.loss
     optimizer = settings.optimizer
     metrics_dict = settings.metrics_dict
+
+    if settings.checkpoints:
+        _p_folder = Path(settings.checkpoints).joinpath(settings.experiment)
+        checkpoints_writer = CheckpointsWriter(model, optimizer, _p_folder, settings.task,
+                                               settings.scheduler)
+    else:
+        checkpoints_writer = None
 
     # Training loop
     for epoch in range(settings.n_epochs):
@@ -97,6 +106,9 @@ def main(cfg: DictConfig) -> None:
         if settings.scheduler:
             print('lr: {:.6f}'.format(optimizer.param_groups[0]['lr']))
             settings.scheduler.step()
+
+        if checkpoints_writer:
+            checkpoints_writer.save(epoch)
 
 
 if __name__ == '__main__':

@@ -20,11 +20,13 @@ class ConfigParser:
 
     optimizer: Optimizer
     scheduler: Union[_LRScheduler, None]
-    # checkpoints: str
+    checkpoints: str
     model: Module
     model_input_feature: str
 
     def __init__(self, config):
+        self.experiment = config.experiment
+        self.task = config.task
         self.train_loader = self._get_train_loader(config.train_data, config.sampled_features, config.transforms,
                                                    config.augmentations, config.batch_size, config.num_workers)
         self.dev_loaders = self._get_dev_loaders(config.dev_data, config.sampled_features, config.dev_transforms,
@@ -32,16 +34,18 @@ class ConfigParser:
         self.model = hydra.utils.instantiate(config.model)
         self.model_input_feature = config.model_input_feature
         self.optimizer = hydra.utils.instantiate(config.optimizer, params=self.model.parameters())
-        self.scheduler = hydra.utils.instantiate(config.scheduler, optimizer=self.optimizer) if config.scheduler \
+        self.scheduler = hydra.utils.instantiate(config.scheduler, optimizer=self.optimizer) if 'scheduler' in config \
             else None
         self.loss = self._get_weighted_sum_loss(config.losses, config.device)
         self.device = config.device
         self.n_epochs = config.n_epochs
         self.metrics_dict = {name: pydoc.locate(value) for name, value in config.metrics.items()}
+        self.checkpoints = config.checkpoints if 'checkpoints' in config else None
 
     @staticmethod
     def get_normalize():
         transform = A.Compose([
+            A.CenterCrop(480, 480),
             A.Normalize()
         ])
         return transform
@@ -50,6 +54,7 @@ class ConfigParser:
     def get_weak_augmentations():
         transform = A.Compose([
             A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.50, rotate_limit=45, p=.75),
+            A.RandomCrop(480, 480),
             A.Normalize()
         ])
         return transform
@@ -63,6 +68,7 @@ class ConfigParser:
             A.OpticalDistortion(),
             A.GridDistortion(),
             A.HueSaturationValue(),
+            A.RandomCrop(480, 480),
             A.Normalize()
         ])
         return transform
@@ -88,7 +94,6 @@ class ConfigParser:
         train_loader = DataLoader(train_dataset,
                                   batch_size=batch_size,
                                   shuffle=True,
-                                  # sampler=train_sampler,
                                   num_workers=num_workers)
         return train_loader
 
