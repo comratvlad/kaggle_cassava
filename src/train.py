@@ -92,7 +92,7 @@ def main(cfg: DictConfig) -> None:
         print('Epoch: {}'.format(epoch), end='; ')
         for loss_name in train_losses:
             print('{}: {:.6f}; '.format(loss_name, train_losses[loss_name]))
-            logger.report_scalar(title='{} train'.format(loss_name), series='Loss',
+            logger.report_scalar(title='Loss', series='{} train'.format(loss_name),
                                  value=train_losses[loss_name], iteration=epoch)
         # ==============================================================================================================
 
@@ -103,14 +103,14 @@ def main(cfg: DictConfig) -> None:
             print(dataset_name+':')
             for loss_name in loss_dict[dataset_name]:
                 print('{}: {:.9f}; '.format(loss_name, loss_dict[dataset_name][loss_name]))
-                logger.report_scalar(title='{} {}'.format(loss_name, dataset_name), series='Loss',
+                logger.report_scalar(title='Loss', series='{} {}'.format(loss_name, dataset_name),
                                      value=loss_dict[dataset_name][loss_name], iteration=epoch)
 
         for metric_name, metrics_result in eval_results.items():
             print('{}: {}'.format(metric_name, ' '.join(['{} - {:.4f}'.format(dataset_name, value)
                                                          for dataset_name, value in metrics_result.items()])))
             for dataset_name, value in metrics_result.items():
-                logger.report_scalar(title='{} {}'.format(metric_name, dataset_name), series='Metric',
+                logger.report_scalar(title='Metric', series='{} {}'.format(metric_name, dataset_name),
                                      value=value, iteration=epoch)
         # ==============================================================================================================
 
