@@ -1,5 +1,5 @@
-experiment: default_experiment
-task: task_1
+experiment: cassava-challenge_regnets
+task: simple-regnet200M-480x480
 
 sampled_features:
   - lib.utils.data.features.RGBFrame

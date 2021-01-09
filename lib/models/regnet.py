@@ -153,9 +153,11 @@ class RegNet(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
+        scores = nn.Softmax()(x)
 
-        return {'disease_logits': x, 'disease_scores': nn.Softmax()(x).argmax(1),
-                'disease_prediction': nn.Softmax()(x).argmax(1)}
+        return {'disease_logits': x,
+                'disease_scores': scores,
+                'disease_prediction': scores.argmax(1)}
 
 
 def load_state_dict(model, pretrained_weights):

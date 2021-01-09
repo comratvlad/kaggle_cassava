@@ -1,6 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 
+import clearml
 import hydra
 import torch
 from omegaconf import DictConfig
@@ -73,6 +74,9 @@ def main(cfg: DictConfig) -> None:
     optimizer = settings.optimizer
     metrics_dict = settings.metrics_dict
 
+    task = clearml.Task.init(settings.experiment, settings.task, auto_resource_monitoring=False)
+    logger = task.get_logger()
+
     if settings.checkpoints:
         _p_folder = Path(settings.checkpoints).joinpath(settings.experiment)
         checkpoints_writer = CheckpointsWriter(model, optimizer, _p_folder, settings.task,
@@ -88,6 +92,8 @@ def main(cfg: DictConfig) -> None:
         print('Epoch: {}'.format(epoch), end='; ')
         for loss_name in train_losses:
             print('{}: {:.6f}; '.format(loss_name, train_losses[loss_name]))
+            logger.report_scalar(title='{} train'.format(loss_name), series='Loss',
+                                 value=train_losses[loss_name], iteration=epoch)
         # ==============================================================================================================
 
         # Dev ==========================================================================================================
@@ -97,14 +103,21 @@ def main(cfg: DictConfig) -> None:
             print(dataset_name+':')
             for loss_name in loss_dict[dataset_name]:
                 print('{}: {:.9f}; '.format(loss_name, loss_dict[dataset_name][loss_name]))
+                logger.report_scalar(title='{} {}'.format(loss_name, dataset_name), series='Loss',
+                                     value=loss_dict[dataset_name][loss_name], iteration=epoch)
 
         for metric_name, metrics_result in eval_results.items():
             print('{}: {}'.format(metric_name, ' '.join(['{} - {:.4f}'.format(dataset_name, value)
                                                          for dataset_name, value in metrics_result.items()])))
+            for dataset_name, value in metrics_result.items():
+                logger.report_scalar(title='{} {}'.format(metric_name, dataset_name), series='Metric',
+                                     value=value, iteration=epoch)
         # ==============================================================================================================
 
         if settings.scheduler:
             print('lr: {:.6f}'.format(optimizer.param_groups[0]['lr']))
+            logger.report_scalar(title='Learning rate', series='Learning rate',
+                                 value=optimizer.param_groups[0]['lr'], iteration=epoch)
             settings.scheduler.step()
 
         if checkpoints_writer:
