@@ -40,7 +40,7 @@ RUN pip3 install --upgrade pip
 COPY other-requirements.txt /home/researcher/
 RUN pip3 install -r /home/researcher/other-requirements.txt
 RUN pip3 install virtualenv setuptools tqdm pillow numpy scikit-learn torch torchvision \
-  opencv-contrib-python-headless matplotlib scipy clearml
+  opencv-contrib-python-headless matplotlib scipy hydra clearml
 RUN rm /home/researcher/other-requirements.txt
 
 # =========== configure zsh and tmux ===========
