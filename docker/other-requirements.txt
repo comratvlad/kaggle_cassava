@@ -1,0 +1,14 @@
+albumentations
+h5py
+ipykernel
+jupyterlab
+kornia
+matplotlib
+pandas
+pillow
+scikit-image
+scikit-learn
+seaborn
+tensorboard>=1.15
+texttable
+tqdm

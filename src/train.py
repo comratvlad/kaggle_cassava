@@ -44,8 +44,7 @@ def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, metrics
     model.eval()
 
     for dataset_name, loader in loaders.items():
-        pred_proba = []
-        ground_truth = []
+        ground_truth, pred = [], []
         with torch.no_grad():
             for batch in tqdm(loader):
                 model_input = batch[model_input_feature].type(torch.FloatTensor).to(torch_device)
@@ -56,10 +55,10 @@ def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, metrics
                 else:
                     loss_dict[dataset_name] = {k: val + _components[k] for k, val in loss_dict[dataset_name].items()}
                 ground_truth.extend(list(batch['disease_label'].detach().cpu()))
-                pred_proba.extend(list(model_output['disease_prediction'].detach().cpu()))
+                pred.extend(list(model_output['disease_prediction'].detach().cpu()))
         loss_dict[dataset_name] = {k: i / len(loader) for k, i in loss_dict[dataset_name].items()}
         for metric_name, metric_function in metrics.items():
-            metrics_result[metric_name][dataset_name] = metric_function(ground_truth, pred_proba)
+            metrics_result[metric_name][dataset_name] = metric_function(ground_truth, pred)
     return metrics_result, loss_dict
 
 
