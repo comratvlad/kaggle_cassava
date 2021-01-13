@@ -4,6 +4,7 @@ from typing import Union, Dict
 
 import albumentations as A
 import hydra
+import omegaconf
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
@@ -30,7 +31,7 @@ class ConfigParser:
         self.train_loader = self._get_train_loader(config.train_data, config.sampled_features, config.transforms,
                                                    config.augmentations, config.batch_size, config.num_workers)
         self.dev_loaders = self._get_dev_loaders(config.dev_data, config.sampled_features, config.dev_transforms,
-                                                 config.batch_size, config.num_workers)
+                                                 config.dev_augmentations, config.batch_size, config.num_workers)
         self.model = hydra.utils.instantiate(config.model)
         self.model_input_feature = config.model_input_feature
         self.optimizer = hydra.utils.instantiate(config.optimizer, params=self.model.parameters())
@@ -43,51 +44,31 @@ class ConfigParser:
         self.checkpoints = config.checkpoints if 'checkpoints' in config else None
 
     @staticmethod
-    def get_normalize():
-        transform = A.Compose([
-            A.CenterCrop(480, 480),
-            A.Normalize()
-        ])
-        return transform
-
-    @staticmethod
-    def get_weak_augmentations():
-        transform = A.Compose([
-            A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.50, rotate_limit=45, p=.75),
-            A.RandomCrop(480, 480),
-            A.Normalize()
-        ])
-        return transform
-
-    @staticmethod
-    def get_hard_augmentations():
-        transform = A.Compose([
-            A.CLAHE(),
-            A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.50, rotate_limit=45, p=.75),
-            A.Blur(blur_limit=3),
-            A.OpticalDistortion(),
-            A.GridDistortion(),
-            A.HueSaturationValue(),
-            A.RandomCrop(480, 480),
-            A.Normalize()
-        ])
-        return transform
+    def _make_albumentations_pipeline(description):
+        pipeline = []
+        for item in description:
+            if isinstance(item, dict) or omegaconf.OmegaConf.is_config(item):
+                if len(item) != 1:
+                    raise ValueError(f'String or dictionary with single key containing import string is expected '
+                                     f'in every list item; got {item}')
+                import_str, params = list(item.items())[0]
+            else:
+                import_str = item
+                params = {}
+            pipeline.append(pydoc.locate(import_str)(**params))
+        return A.Compose(pipeline)
 
     @staticmethod
     def _get_train_loader(train_data, sampled_features, transforms, augmentations, batch_size, num_workers):
         train_datasets = []
         for _, train_dataset_setting in train_data.items():
             transforms = pydoc.locate(transforms)
-            # TODO: full configure augmentations by config.yaml
-            if augmentations == 'weak':
-                transforms_with_augmentations = partial(transforms,
-                                                        albumentations_compose=ConfigParser.get_weak_augmentations())
-            else:
-                transforms_with_augmentations = partial(transforms,
-                                                        albumentations_compose=ConfigParser.get_hard_augmentations())
+            if augmentations:
+                transforms = partial(transforms,
+                                     albumentations_compose=ConfigParser._make_albumentations_pipeline(augmentations))
             dataset = FolderDataset(train_dataset_setting.path, train_dataset_setting.info_path,
                                     features=[pydoc.locate(feature) for feature in sampled_features],
-                                    transforms=transforms_with_augmentations, filter_by=train_dataset_setting.filter_by)
+                                    transforms=transforms, filter_by=train_dataset_setting.filter_by)
             train_datasets.append(dataset)
 
         train_dataset = ConcatDataset(train_datasets)
@@ -98,15 +79,16 @@ class ConfigParser:
         return train_loader
 
     @staticmethod
-    def _get_dev_loaders(dev_data, sampled_features, transforms, batch_size, num_workers):
+    def _get_dev_loaders(dev_data, sampled_features, transforms, augmentations, batch_size, num_workers):
         dev_loaders = {}
         for name, dev_dataset_setting in dev_data.items():
             transforms = pydoc.locate(transforms)
-            # TODO: full configure augmentations by config.yaml
-            transforms_with_augmentations = partial(transforms, albumentations_compose=ConfigParser.get_normalize())
+            if augmentations:
+                transforms = partial(transforms,
+                                     albumentations_compose=ConfigParser._make_albumentations_pipeline(augmentations))
             dataset = FolderDataset(dev_dataset_setting.path, dev_dataset_setting.info_path,
                                     features=[pydoc.locate(feature) for feature in sampled_features],
-                                    transforms=transforms_with_augmentations, filter_by=dev_dataset_setting.filter_by)
+                                    transforms=transforms, filter_by=dev_dataset_setting.filter_by)
             dev_loaders[name] = DataLoader(dataset,
                                            batch_size=batch_size,
                                            num_workers=num_workers)

@@ -1,5 +1,5 @@
 experiment: cassava-challenge_regnets
-task: simple-regnet200M-480x480
+task: simple-regnet200M-480x480-new_augs
 
 sampled_features:
   - lib.utils.data.features.RGBFrame
@@ -27,11 +27,55 @@ train_data:
 
 n_epochs: ???
 batch_size: 120
-num_workers: 32
+num_workers: 16
 device: ???
 
 transforms: lib.utils.data.transforms.rgb_transform
-augmentations: hard
+augmentations:
+  - albumentations.Flip:
+      p: 0.5
+  - albumentations.HorizontalFlip:
+      p: 0.5
+  - albumentations.ShiftScaleRotate:
+      shift_limit: 0.0625
+      scale_limit: 0.1
+      rotate_limit: 30.0
+      p: 0.6
+  - albumentations.RandomBrightness:
+      p: 0.75
+  - albumentations.ElasticTransform:
+      p: 0.2
+  - albumentations.GridDistortion:
+      p: 0.3
+  - albumentations.ImageCompression:
+      quality_lower: 50
+      quality_upper: 80
+  - albumentations.CoarseDropout:
+      max_holes: 32
+      max_height: 16
+      max_width: 16
+      fill_value: 0
+      p: 0.75
+  - albumentations.GaussNoise:
+      p: 0.75
+  - albumentations.ImageCompression:
+      p: 0.4
+  - albumentations.ISONoise:
+      color_shift: [ 0.01, 0.05 ]
+      intensity: [ 0.1, 0.5 ]
+      p: 0.35
+  - albumentations.Downscale:
+      scale_min: 0.5
+      scale_max: 0.75
+      p: 0.2
+  - albumentations.RandomCrop:
+      height: 480
+      width: 480
+      always_apply: True
+  - albumentations.Normalize:
+      mean: [ 0.485, 0.456, 0.406 ]
+      std: [ 0.229, 0.224, 0.225 ]
+      always_apply: True
 
 optimizer:
   _target_: torch.optim.Adam
@@ -63,6 +107,15 @@ dev_data:
     weight: 1.0
 
 dev_transforms: lib.utils.data.transforms.rgb_transform
+dev_augmentations:
+  - albumentations.CenterCrop:
+      height: 480
+      width: 480
+      always_apply: True
+  - albumentations.Normalize:
+      mean: [ 0.485, 0.456, 0.406 ]
+      std: [ 0.229, 0.224, 0.225 ]
+      always_apply: True
 
 metrics:
   ACC: sklearn.metrics.accuracy_score

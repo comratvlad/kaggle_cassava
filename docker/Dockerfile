@@ -1,5 +1,5 @@
 # basic nvidia image of Ubuntu with CUDA and cuDNN
-FROM nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
+FROM nvidia/cuda:9.0-base
 
 MAINTAINER Marchevskiy Vladislav comratvlad@yandex.ru
 LABEL Deep Learning with Pytorch docker image
@@ -42,7 +42,7 @@ USER researcher
 
 RUN pip3 install --upgrade pip
 COPY other-requirements.txt /home/researcher/
-RUN pip3 install --file /home/researcher/other-requirements.txt
+# RUN pip3 install -r /home/researcher/other-requirements.txt
 RUN pip3 install virtualenv setuptools tqdm pillow numpy scikit-learn torch torchvision \
   opencv-contrib-python-headless matplotlib scipy
 RUN rm /home/researcher/other-requirements.txt
