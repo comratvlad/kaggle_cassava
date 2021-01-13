@@ -1,5 +1,5 @@
 # basic nvidia image of Ubuntu with CUDA and cuDNN
-FROM nvidia/cuda:9.0-base
+FROM nvidia/cuda:11.1-cudnn8-devel-ubuntu18.04
 
 MAINTAINER Marchevskiy Vladislav comratvlad@yandex.ru
 LABEL Deep Learning with Pytorch docker image
@@ -13,16 +13,12 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
   apt-utils \
   sudo \
-  python-pip \
   python3-pip \
-  python-setuptools \
   python3-setuptools \
   cifs-utils \
   nfs-common \
   git \
   subversion \
-  tortoisehg \
-  ipython \
   htop \
   tmux \
   zsh \
@@ -42,9 +38,9 @@ USER researcher
 
 RUN pip3 install --upgrade pip
 COPY other-requirements.txt /home/researcher/
-# RUN pip3 install -r /home/researcher/other-requirements.txt
+RUN pip3 install -r /home/researcher/other-requirements.txt
 RUN pip3 install virtualenv setuptools tqdm pillow numpy scikit-learn torch torchvision \
-  opencv-contrib-python-headless matplotlib scipy
+  opencv-contrib-python-headless matplotlib scipy hydra clearml
 RUN rm /home/researcher/other-requirements.txt
 
 # =========== configure zsh and tmux ===========
@@ -67,10 +63,8 @@ RUN apt-get update && apt-get -y install openssh-server
 USER researcher
 
 RUN mkdir /home/researcher/data
-RUN mkdir /home/researcher/ssd_data
 RUN mkdir /home/researcher/src
 VOLUME /home/researcher/data
-VOLUME /home/researcher/ssd_data
 VOLUME /home/researcher/src
 
 WORKDIR /home/researcher
