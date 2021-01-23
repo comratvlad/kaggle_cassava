@@ -1,5 +1,5 @@
 experiment: cassava-challenge_regnets
-task: simple-regnet200M-480x480-new_augs
+task: simple-regnet200M-resize480x480-new_augs
 
 sampled_features:
   - lib.utils.data.features.RGBFrame
@@ -8,19 +8,19 @@ sampled_features:
 # Model ========================================================
 model:
   _target_: lib.models.regnet.regnetx_002
-  pretrained_weights: /home/researcher/cassava/data/RegNetX-200M-5e5535e1.pth
+  pretrained_weights: /home/vladislav/PycharmProjects/kaggle_cassava/data/RegNetX-200M-5e5535e1.pth
   num_classes: 5
 
 model_input_feature: rgb_frame
 
-checkpoints: /home/researcher/cassava/data/checkpoints
+checkpoints: /home/vladislav/PycharmProjects/kaggle_cassava/data/checkpoints
 # ==============================================================
 
 # Train ========================================================
 train_data:
   cassava_dataset:
-    path: /home/researcher/ssd_data/Cassava/train_images/
-    info_path: /home/researcher/ssd_data/Cassava/train.csv
+    path: /home/vladislav/data/Cassava/train_images/
+    info_path: /home/vladislav/data/Cassava/train.csv
     filter_by:
       protocol_1: train
     weight: 1.0
@@ -68,7 +68,7 @@ augmentations:
       scale_min: 0.5
       scale_max: 0.75
       p: 0.2
-  - albumentations.RandomCrop:
+  - albumentations.Resize:
       height: 480
       width: 480
       always_apply: True
@@ -100,15 +100,15 @@ losses:
 # Dev ========================================================
 dev_data:
   cassava_dataset:
-    path: /home/researcher/ssd_data/Cassava/train_images/
-    info_path: /home/researcher/ssd_data/Cassava/train.csv
+    path: /home/vladislav/data/Cassava/train_images/
+    info_path: /home/vladislav/data/Cassava/train.csv
     filter_by:
       protocol_1: dev
     weight: 1.0
 
 dev_transforms: lib.utils.data.transforms.rgb_transform
 dev_augmentations:
-  - albumentations.CenterCrop:
+  - albumentations.Resize:
       height: 480
       width: 480
       always_apply: True

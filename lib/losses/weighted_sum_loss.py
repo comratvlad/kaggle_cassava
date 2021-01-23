@@ -12,7 +12,7 @@ class WeightedSumLoss(torch.nn.Module):
         self._components = components
         self.device = device
 
-    def forward(self, batch, model_output):
+    def forward(self, model_output, batch):
         # TODO: inspect or remember saved_args = locals()
         components_eval = {}
         weighted_sum = 0
