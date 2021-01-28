@@ -14,7 +14,7 @@ from lib.utils.config_parser import ConfigParser
 
 def train_one_epoch(model, model_input_feature, loader, loss, optimizer, device):
     model.train()
-    component_values = defaultdict(int)
+    component_values = defaultdict(float)
     for batch in tqdm(loader):
         model_input = batch[model_input_feature].type(torch.FloatTensor).to(device)
         model_output = model(model_input)
@@ -36,11 +36,12 @@ def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, metrics
     :param metrics: a dictionary {<metric name>: <metric function import>}. Metric function is a callable that takes
     predictions as the first argument and true labels as the second
     :param torch_device: device to place model input to (must be the same device as the model's)
-    :return: a dictionary { <metric name>: { <dataset name>: <metric result>, ...}, ...}
+    :return: a dictionaries { <metric name>: { <dataset name>: <metric result>, ...}, ...}  and
+    { <dataset name>: { <loss name>: <loss result>, ...}, ...}
     """
 
-    metrics_result = {metric_name: {dataset_name: 0 for dataset_name in loaders.keys()} for metric_name in metrics}
-    loss_dict = {dataset_name: {} for dataset_name in loaders.keys()}
+    metrics_result = defaultdict(lambda: defaultdict(float))
+    loss_dict = defaultdict(lambda: defaultdict(float))
     model.eval()
 
     for dataset_name, loader in loaders.items():
@@ -50,13 +51,12 @@ def evaluate(loss: WeightedSumLoss, model, loaders, model_input_feature, metrics
                 model_input = batch[model_input_feature].type(torch.FloatTensor).to(torch_device)
                 model_output = model(model_input)
                 weighted_sum, _components = loss(batch, model_output)
-                if not loss_dict[dataset_name]:
-                    loss_dict[dataset_name].update(_components)
-                else:
-                    loss_dict[dataset_name] = {k: val + _components[k] for k, val in loss_dict[dataset_name].items()}
+                for loss_name in _components:
+                    loss_dict[dataset_name][loss_name] += _components[loss_name]
                 ground_truth.extend(list(batch['disease_label'].detach().cpu()))
                 pred.extend(list(model_output['disease_prediction'].detach().cpu()))
-        loss_dict[dataset_name] = {k: i / len(loader) for k, i in loss_dict[dataset_name].items()}
+        for loss_name in loss_dict[dataset_name]:
+            loss_dict[dataset_name][loss_name] /= len(loader)
         for metric_name, metric_function in metrics.items():
             metrics_result[metric_name][dataset_name] = metric_function(ground_truth, pred)
     return metrics_result, loss_dict

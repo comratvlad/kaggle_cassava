@@ -12,7 +12,7 @@ class WeightedSumLoss(torch.nn.Module):
         self._components = components
         self.device = device
 
-    def forward(self, model_output, batch):
+    def forward(self, batch, model_output):
         # TODO: inspect or remember saved_args = locals()
         components_eval = {}
         weighted_sum = 0
@@ -21,13 +21,8 @@ class WeightedSumLoss(torch.nn.Module):
             for name, params in component.args.items():
                 # TODO: what if there are no key?
                 # TODO: check the format
-                source_name, *key = params.split('.')
-                if len(key) == 0:
-                    loss_inputs[name] = locals()[source_name].to(self.device)
-                elif len(key) == 1:
-                    loss_inputs[name] = locals()[source_name][key[0]].to(self.device)
-                else:
-                    raise ValueError('Wrong format of losses.args.')
+                source_name, key = params.split('.')
+                loss_inputs[name] = locals()[source_name][key].to(self.device)
             loss_value: torch.Tensor = component.instance(**loss_inputs)
             weighted_sum += component.weight * loss_value
             components_eval[component.name] = loss_value.item()
