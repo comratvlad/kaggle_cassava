@@ -1,7 +1,7 @@
-source /home/researcher/.antigen/antigen.zsh
+source /home/mainuser/.antigen/antigen.zsh
 antigen use oh-my-zsh
 
-export DEFAULT_USER=researcher
+export DEFAULT_USER=mainuser
 
 alias tma="tmux attach"
 
