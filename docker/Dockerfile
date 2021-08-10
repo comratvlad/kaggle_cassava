@@ -30,44 +30,44 @@ RUN apt-get install -y --no-install-recommends \
   rm -rf /var/lib/apt/lists/*
 
 # =========== add new working user ================
-RUN useradd --home-dir /home/researcher --create-home --shell /bin/zsh --gid root --groups sudo researcher
-RUN echo 'researcher:deeppass' | chpasswd
+RUN useradd --home-dir /home/mainuser --create-home --shell /bin/zsh --gid root --groups sudo mainuser
+RUN echo 'mainuser:userpass' | chpasswd
 
 # ================ install additional python packages =====================
-USER researcher
+USER mainuser
 
 RUN pip3 install --upgrade pip
-COPY other-requirements.txt /home/researcher/
-RUN pip3 install -r /home/researcher/other-requirements.txt
+COPY other-requirements.txt /home/mainuser/
+RUN pip3 install -r /home/mainuser/other-requirements.txt
 RUN pip3 install virtualenv setuptools tqdm pillow numpy scikit-learn torch torchvision \
   opencv-contrib-python-headless matplotlib scipy hydra clearml
-RUN rm /home/researcher/other-requirements.txt
+RUN rm /home/mainuser/other-requirements.txt
 
 # =========== configure zsh and tmux ===========
 USER root
 RUN apt-get update && apt-get -y install autojump
-USER researcher
+USER mainuser
 RUN git clone https://github.com/zsh-users/antigen.git ~/.antigen
 
 # copy file with zsh settings
-COPY zshrc.researcher /home/researcher/.zshrc
+COPY zshrc.mainuser /home/mainuser/.zshrc
 
 # copy file with tmux settings
-COPY tmux.conf /home/researcher/.tmux.conf
+COPY tmux.conf /home/mainuser/.tmux.conf
 
 # ========== install openssh server ===========
 USER root
 RUN apt-get update && apt-get -y install openssh-server
 
 # ==== set working user and directory ====
-USER researcher
+USER mainuser
 
-RUN mkdir /home/researcher/data
-RUN mkdir /home/researcher/src
-VOLUME /home/researcher/data
-VOLUME /home/researcher/src
+RUN mkdir /home/mainuser/data
+RUN mkdir /home/mainuser/src
+VOLUME /home/mainuser/data
+VOLUME /home/mainuser/src
 
-WORKDIR /home/researcher
-ENV PYTHONPATH=/home/researcher/src
+WORKDIR /home/mainuser
+ENV PYTHONPATH=/home/mainuser/src
 
 ENTRYPOINT sudo service ssh restart && zsh
